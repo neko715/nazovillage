@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>謎の村〜地図から消えた理由</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            font-family: 'Noto Serif JP', serif;
+            color: #ddd;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 血のようなテクスチャ背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at top left, rgba(40, 0, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(20, 0, 0, 0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at center, rgba(60, 0, 0, 0.1) 0%, transparent 70%);
+            animation: breathe 8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                opacity: 0.7;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        /* 静電気ノイズエフェクト */
+        .static-noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-conic-gradient(from 0deg, transparent 0deg, rgba(255, 255, 255, 0.03) 1deg, transparent 2deg);
+            animation: staticFlicker 0.1s infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes staticFlicker {
+            0% {
+                opacity: 0;
+            }
+
+            5% {
+                opacity: 1;
+            }
+
+            10% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* 画面全体のちらつき */
+        @keyframes screenFlicker {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            1% {
+                opacity: 0.95;
+            }
+
+            2% {
+                opacity: 1;
+            }
+
+            5% {
+                opacity: 0.9;
+            }
+
+            6% {
+                opacity: 1;
+            }
+        }
+
+        .container {
+            animation: screenFlicker 4s infinite;
+        }
+
+        .content {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* タイトル部分 */
+        .header {
+            text-align: center;
+            padding: 40px 0 60px;
+            position: relative;
+        }
+
+        .title {
+            font-size: 2.2rem;
+            font-weight: 300;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+            line-height: 1.2;
+        }
+
+        @keyframes titleGlow {
+            0% {
+                text-shadow: 0 0 20px rgba(255, 0, 0, 0.8), 0 0 40px rgba(255, 0, 0, 0.4);
+                color: #fff;
+            }
+
+            100% {
+                text-shadow: 0 0 30px rgba(255, 50, 50, 0.9), 0 0 60px rgba(255, 50, 50, 0.6);
+                color: #ffeeee;
+            }
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #999;
+            font-weight: 300;
+            margin-bottom: 40px;
+        }
+
+        /* 新聞部分 */
+        .newspaper {
+            background: linear-gradient(to bottom, #f8f8f0, #e8e8dc);
+            color: #222;
+            padding: 30px 25px;
+            margin: 40px 0;
+            border-radius: 8px;
+            box-shadow:
+                0 15px 35px rgba(0, 0, 0, 0.8),
+                inset 0 0 25px rgba(139, 69, 19, 0.1);
+            position: relative;
+            transform: rotate(-0.5deg);
+            transition: all 0.4s ease;
+        }
+
+        .newspaper:hover {
+            transform: rotate(0deg) scale(1.02);
+        }
+
+        /* 新聞の線 */
+        .newspaper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 24px,
+                    rgba(0, 0, 0, 0.05) 25px);
+            pointer-events: none;
+            border-radius: 8px;
+        }
+
+        .newspaper-header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .newspaper-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #8b0000;
+            margin-bottom: 8px;
+        }
+
+        .newspaper-date {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .article-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #8b0000;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .article-content {
+            line-height: 1.7;
+            font-size: 0.95rem;
+            text-align: justify;
+        }
+
+        .article-content p {
+            margin-bottom: 15px;
+        }
+
+        .reporter-message {
+            font-style: italic;
+            color: #8b0000;
+            font-weight: bold;
+            padding: 10px;
+            border-left: 3px solid #8b0000;
+            margin: 15px 0;
+            background: rgba(139, 0, 0, 0.05);
+        }
+
+        /* 写真ギャラリー */
+        .gallery {
+            margin: 50px 0;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .photo-frame {
+            background: #111;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+            aspect-ratio: 4/3;
+        }
+
+        .photo-frame:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 30px rgba(255, 0, 0, 0.3);
+        }
+
+        .photo-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.8rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-placeholder::before {
+            content: '👁️';
+            font-size: 2rem;
+            margin-bottom: 10px;
+            animation: blink 3s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            90%,
+            100% {
+                opacity: 1;
+            }
+
+            95% {
+                opacity: 0;
+            }
+        }
+
+        .photo-caption {
+            color: #aaa;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* 不気味な効果 */
+        .glitch-text {
+            position: relative;
+            display: inline-block;
+        }
+
+        .glitch-text::before {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            color: #ff0000;
+            overflow: hidden;
+            animation: glitch 0.5s infinite;
+            opacity: 0;
+        }
+
+        @keyframes glitch {
+            0% {
+                clip: rect(42px, 9999px, 44px, 0);
+                opacity: 0;
+            }
+
+            5% {
+                clip: rect(12px, 9999px, 59px, 0);
+                opacity: 1;
+            }
+
+            10% {
+                clip: rect(48px, 9999px, 29px, 0);
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* 怖い警告メッセージ */
+        .creepy-message {
+            background: rgba(139, 0, 0, 0.1);
+            border: 1px solid #8b0000;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 40px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .creepy-message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.1), transparent);
+            animation: sweep 4s infinite;
+        }
+
+        @keyframes sweep {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        .creepy-message h3 {
+            color: #ff4444;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .creepy-message p {
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* フッター */
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            margin-top: 60px;
+            border-top: 1px solid #333;
+        }
+
+        .footer p {
+            color: #555;
+            font-size: 0.8rem;
+            margin: 5px 0;
+        }
+
+        /* スマホ専用の調整 */
+        @media (max-width: 480px) {
+            .content {
+                max-width: 100%;
+                padding: 15px;
+            }
+
+            .title {
+                font-size: 1.8rem;
+            }
+
+            .newspaper {
+                padding: 20px 15px;
+                margin: 30px 0;
+                transform: rotate(0deg);
+            }
+
+            .newspaper-title {
+                font-size: 1.5rem;
+            }
+
+            .article-title {
+                font-size: 1.1rem;
+            }
+
+            .article-content {
+                font-size: 0.9rem;
+            }
+
+            .photo-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .photo-frame {
+                aspect-ratio: 16/9;
+            }
+        }
+
+        /* ローディング時の血のドリップ効果 */
+        .blood-drip {
+            position: fixed;
+            top: 0;
+            width: 2px;
+            height: 100px;
+            background: linear-gradient(to bottom, #8b0000, transparent);
+            animation: drip 3s ease-in infinite;
+            opacity: 0;
+        }
+
+        @keyframes drip {
+            0% {
+                top: -100px;
+                opacity: 1;
+            }
+
+            70% {
+                opacity: 1;
+            }
+
+            100% {
+                top: 100vh;
+                opacity: 0;
+            }
+        }
+
+        /* スクロール時のフェード効果 */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="static-noise"></div>
+
+    <div class="container">
+        <div class="content">
+            <header class="header">
+                <h4 class="title">謎の村<br>〜地図から消えた理由〜</h4>
+                <p class="subtitle">マインクラフト ホラー脱出マップ</p>
+            </header>
+
+            <div class="newspaper fade-up">
+                <div class="newspaper-header">
+                    <h2 class="newspaper-title">夕日新聞</h2>
+                    <p class="newspaper-date">発行日不明</p>
+                </div>
+
+                <article>
+                    <h3 class="article-title">『地図から消えた謎の村』</h3>
+                    <div class="article-content">
+                        <p>今から500年前に記者が踏み入れてから、一度も誰も来たことのない村。今回夕日新聞はこの謎の村への調査に成功した。</p>
+
+                        <p>調査に行った記者は最後の方向のメールを残して帰ってこなくなってしまった。最後のメールにはこう書かれていた。</p>
+
+                        <div class="reporter-message">
+                            "この村の人たちは日本語を話すことができ言葉も通じる。調査を進める"
+                        </div>
+
+                        <p>と送られできた。何かあったに違いない。</p>
+
+                        <p>警察に言ってもなにもしてもらえなかった。もう諦めるしかないのか、、、</p>
+
+                        <p>この村に来たものがいるなら、話を聞いてみるのもいいかもしれない。</p>
+                    </div>
+                </article>
+            </div>
+
+            <div class="gallery fade-up">
+                <div class="photo-grid">
+                    <div class="photo-frame">
+                        <img src="cam.jpg" alt="記者のカメラより"
+                            style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                    </div>
+                    <div class="photo-caption">記者のカメラより</div>
+
+                    <div class="photo-frame">
+                        <img src="village.jpg" alt="村の最後の風景"
+                            style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                    </div>
+                    <div class="photo-caption">村の最後の風景</div>
+
+                    <div class="photo-frame">
+                        <img src="cam2.jpg" alt="記者のカメラより"
+                            style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                    </div>
+                    <div class="photo-caption">記者のカメラより</div>
+
+                    <div class="photo-frame">
+                        <img src="memo.jpg" alt="残されたメモ"
+                            style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                    </div>
+                    <div class="photo-caption">残されたメモ</div>
+                </div>
+            </div>
+
+            <div class="creepy-message fade-up">
+                <h3><span class="glitch-text" data-text="この村に入る者へ">この村に入る者へ</span></h3>
+                <p>一度足を踏み入れたら、二度と出ることはできません。</p>
+                <p>それでも...あなたは行きますか？</p>
+            </div>
+
+            <footer class="footer">
+                <p>制作者は村で起きた出来事について一切の責任を負いません</p>
+                <p>&copy; 2024 謎の村制作チーム</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // 血のドリップ効果
+        function createBloodDrip() {
+            const drip = document.createElement('div');
+            drip.className = 'blood-drip';
+            drip.style.left = Math.random() * 100 + '%';
+            document.body.appendChild(drip);
+
+            setTimeout(() => {
+                drip.remove();
+            }, 3000);
+        }
+
+        // 定期的に血のドリップを作成
+        setInterval(() => {
+            if (Math.random() < 0.3) {
+                createBloodDrip();
+            }
+        }, 2000);
+
+        // スクロールアニメーション
+        function isElementInViewport(el) {
+            const rect = el.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        }
+
+        function handleScrollAnimations() {
+            const elements = document.querySelectorAll('.fade-up');
+            elements.forEach(el => {
+                if (window.scrollY + window.innerHeight > el.offsetTop + 100) {
+                    el.classList.add('visible');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', handleScrollAnimations);
+        window.addEventListener('load', handleScrollAnimations);
+
+        // ランダムなグリッチ効果
+        setInterval(() => {
+            if (Math.random() < 0.15) {
+                const glitchElements = document.querySelectorAll('.glitch-text');
+                glitchElements.forEach(el => {
+                    el.style.animation = 'none';
+                    setTimeout(() => {
+                        el.style.animation = 'glitch 0.5s infinite';
+                    }, 10);
+                });
+            }
+        }, 8000);
+
+        // 画面全体の不気味なエフェクト
+        let flickerCount = 0;
+        setInterval(() => {
+            if (Math.random() < 0.1) {
+                document.body.style.filter = 'contrast(1.2) brightness(0.8)';
+                setTimeout(() => {
+                    document.body.style.filter = 'none';
+                }, 150);
+            }
+        }, 5000);
+
+        // スクロール時の写真フレームの視線効果
+        document.addEventListener('scroll', () => {
+            const photos = document.querySelectorAll('.photo-placeholder::before');
+            const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+
+            if (scrollPercent > 0.5) {
+                document.querySelectorAll('.photo-placeholder').forEach((photo, index) => {
+                    if (Math.random() < 0.3) {
+                        photo.style.filter = 'brightness(1.2) contrast(1.1)';
+                        setTimeout(() => {
+                            photo.style.filter = 'none';
+                        }, 200);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
